@@ -23,7 +23,7 @@ The intention is to launch this automatically when the Raspberry Pi boots.
 
 To build the ARM version using the custom container (see misc/README.md) use the following command:
 
-    podman run -e "XARGO_HOME=/xargo" -e "CARGO_HOME=/cargo" -e "CARGO_TARGET_DIR=/target" -e "CROSS_RUNNER=" -v "${HOME}/.cargo:/cargo:Z" -v "${HOME}/src/rust/bird_counter:/bird_counter:Z" -v "${HOME}/.rustup/toolchains/stable-x86_64-unknown-linux-gnu:/rust:Z,ro" -v "${HOME}/src/rust/bird_counter/target:/target:Z" -w /bird_counter -it localhost/my/gtk-armv7-unknown-linux-gnueabihf cargo build --target armv7-unknown-linux-gnueabihf
+    podman run -e "XARGO_HOME=/xargo" -e "CARGO_HOME=/cargo" -e "CARGO_TARGET_DIR=/target" -e "CROSS_RUNNER=" -v "${HOME}/.cargo:/cargo:Z" -v "${HOME}/src/rust/bird_counter:/bird_counter:Z" -v "${HOME}/.rustup/toolchains/stable-x86_64-unknown-linux-gnu:/rust:Z,ro" -v "${HOME}/src/rust/bird_counter/target:/target:Z" -w /bird_counter -it --rm --name bird_counter localhost/my/gtk-armv7-unknown-linux-gnueabihf cargo build --target armv7-unknown-linux-gnueabihf
 
 (If you're using docker you can replace `podman` with `docker` in that command.)
 
