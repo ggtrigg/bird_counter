@@ -49,8 +49,11 @@ name = "bird_counter"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "directories-next",
+ "gdk",
  "gdk-pixbuf",
  "gio",
+ "glib",
  "gtk",
  "turbosql",
 ]
