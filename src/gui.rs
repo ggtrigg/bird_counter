@@ -44,7 +44,7 @@ pub fn load_images(vbox: &Box, animals: &Vec<Animal>) {
     }
 }
 
-fn image_dir() -> PathBuf {
+pub fn image_dir() -> PathBuf {
     let image_dir = ProjectDirs::from("org", "glenntrigg", "bird_counter")
     .unwrap()
     .data_dir()
@@ -162,7 +162,7 @@ fn get_animal_pixbuf(animal_id: &i64, width: i32, height: i32) -> gdk_pixbuf::Pi
             None => gdk_pixbuf::Pixbuf::from_file_at_scale(image_dir().join(Path::new("unknown.png")), width, height, true)
         };
         pb = res.expect("Error loading file into pixbuf");
-        if let Ok(today_count) = select!(i64 "count(*) from sighting where animal_id = ? and date(seen_at, \"unixepoch\", \"localtime\") = date(\"now\")",
+        if let Ok(today_count) = select!(i64 "count(*) from sighting where animal_id = ? and date(seen_at, \"unixepoch\", \"localtime\") = date(\"now\", \"localtime\")",
                 animal_id) {
             if today_count > 0 {
                 add_tick(&pb);

@@ -64,6 +64,7 @@ fn main() {
 
         let window = ApplicationWindow::new(app);
         window.set_title("Bird Counter");
+        window.set_icon_from_file(gui::image_dir().join("bird_icon.png")).err();
         if *is_fullscreen {
             window.fullscreen();
         } else {
