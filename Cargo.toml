@@ -27,3 +27,7 @@ features = ["v3_16"]
 [dependencies.gio]
 version = ""
 features = ["v2_44"]
+
+[dependencies.cairo-rs]
+version = "0.9.1"
+features = ["v1_16"]
