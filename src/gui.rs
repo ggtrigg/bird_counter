@@ -88,7 +88,7 @@ fn animal_selected(object: &EventBox, _event: &gdk::EventButton) -> gtk::Inhibit
                         if let Some(basename) = source_file.file_name() {
                             let dest_file = image_dir().join(basename);
                             fs::copy(&source_file, &dest_file)
-                                .expect("Error copying file");
+                                .map_err(|e| alert(&format!("Error copying file\n{}", e)[..])).ok();
                             let animal = Animal {
                                 rowid: None,
                                 name: Some(name.get_text().to_string()),
@@ -97,20 +97,17 @@ fn animal_selected(object: &EventBox, _event: &gdk::EventButton) -> gtk::Inhibit
                                 ),
                                 image: None,
                             };
-                            let oid = animal
+                            if let Some(oid) = animal
                                 .insert()
-                                .expect("error adding animal to database");
-                            // Update GUI
-                            if let Some(child) = object.get_child() {
-                                if let Ok(image) = child.downcast::<gtk::Image>() {
-                                    let pb = gdk_pixbuf::Pixbuf::from_file_at_scale(
-                                        dest_file, 180, 180, true,
-                                    )
-                                    .expect("couldn't load pixbuf from file");
-                                    image.set_from_pixbuf(Some(&pb));
-                                    // Set eventbox data
-                                    unsafe {
-                                        object.set_data("animal", oid);
+                                .map_err(|e| alert(&format!("Error adding animal to database\n{}", e)[..])).ok() {
+
+                                unsafe {
+                                    object.set_data("animal", oid);
+                                }
+                                // Update GUI
+                                if let Some(child) = object.get_child() {
+                                    if let Ok(da) = child.downcast::<gtk::DrawingArea>() {
+                                        da.show();
                                     }
                                 }
                             }
@@ -118,15 +115,7 @@ fn animal_selected(object: &EventBox, _event: &gdk::EventButton) -> gtk::Inhibit
                     }
                     break;
                 }
-                let alert = MessageDialog::new(
-                    Some(&dialog),
-                    gtk::DialogFlags::MODAL | gtk::DialogFlags::DESTROY_WITH_PARENT,
-                    gtk::MessageType::Error,
-                    gtk::ButtonsType::Ok,
-                    "Please enter a species name.",
-                );
-                alert.run();
-                alert.hide();
+                alert("Please enter a species name.");
             }
             dialog.hide();
         }
@@ -154,14 +143,17 @@ fn draw_image(da: &gtk::DrawingArea, context: &cairo::Context) -> gtk::Inhibit {
 
 fn get_animal_pixbuf(animal_id: &i64, width: i32, height: i32) -> gdk_pixbuf::Pixbuf {
     let mut pb = gdk_pixbuf::Pixbuf::from_file_at_scale(image_dir().join(Path::new("unknown.png")), width, height, true)
-        .expect("Error loading file into pixbuf");
+                .map_err(|e| alert(&format!("Couldn't load pixbuf from file\n{}", e)[..])).ok()
+                .unwrap_or(gdk_pixbuf::Pixbuf::new(gdk_pixbuf::Colorspace::Rgb, true, 8, 180, 180).unwrap());
 
     if let Ok(animal) = select!(Animal "where rowid = ?", animal_id) {
         let res = match &animal.filename {
             Some(filename) => gdk_pixbuf::Pixbuf::from_file_at_scale(image_dir().join(Path::new(filename)), width, height, true),
             None => gdk_pixbuf::Pixbuf::from_file_at_scale(image_dir().join(Path::new("unknown.png")), width, height, true)
         };
-        pb = res.expect("Error loading file into pixbuf");
+        pb = res
+            .map_err(|e| alert(&format!("Couldn't load pixbuf from file\n{}", e)[..])).ok()
+            .unwrap_or(gdk_pixbuf::Pixbuf::new(gdk_pixbuf::Colorspace::Rgb, true, 8, 180, 180).unwrap());
         if let Ok(today_count) = select!(i64 "count(*) from sighting where animal_id = ? and date(seen_at, \"unixepoch\", \"localtime\") = date(\"now\", \"localtime\")",
                 animal_id) {
             if today_count > 0 {
@@ -173,27 +165,28 @@ fn get_animal_pixbuf(animal_id: &i64, width: i32, height: i32) -> gdk_pixbuf::Pi
 }
 
 fn add_tick(dest_pb: &gdk_pixbuf::Pixbuf) {
-    let tick_pb = gdk_pixbuf::Pixbuf::from_file(&image_dir().join(Path::new("tick.png")))
-        .expect("Can't load tick image.");
-    let dw = dest_pb.get_width();
-    let dh = dest_pb.get_height();
-    let tw = tick_pb.get_width();
-    let th = tick_pb.get_height();
-    let ow = dw - tw - 10;
-    let oh = dh - th - 10;
-    tick_pb.composite(
-        &dest_pb,
-        ow,
-        oh,
-        tw,
-        th,
-        ow as f64,
-        oh as f64,
-        1.0,
-        1.0,
-        gdk_pixbuf::InterpType::Bilinear,
-        255,
-    );
+    if let Some(tick_pb) = gdk_pixbuf::Pixbuf::from_file(&image_dir().join(Path::new("tick.png")))
+            .map_err(|e| alert(&format!("Couldn't load pixbuf from file\n{}", e)[..])).ok() {
+        let dw = dest_pb.get_width();
+        let dh = dest_pb.get_height();
+        let tw = tick_pb.get_width();
+        let th = tick_pb.get_height();
+        let ow = dw - tw - 10;
+        let oh = dh - th - 10;
+        tick_pb.composite(
+            &dest_pb,
+            ow,
+            oh,
+            tw,
+            th,
+            ow as f64,
+            oh as f64,
+            1.0,
+            1.0,
+            gdk_pixbuf::InterpType::Bilinear,
+            255,
+        );
+    }
 }
 
 pub fn refresh_images(vbox: &gtk::Box) -> glib::Continue {
@@ -223,4 +216,16 @@ pub fn refresh_images(vbox: &gtk::Box) -> glib::Continue {
 fn _detect_resize(_widget: &Image, event: &EventConfigure) -> bool {
     println!("In detect_resize(), event: {:?}", event.get_size());
     false
+}
+
+fn alert(message: &str) -> () {
+    let alert = MessageDialog::new::<Window>(
+        None,
+        gtk::DialogFlags::DESTROY_WITH_PARENT,
+        gtk::MessageType::Error,
+        gtk::ButtonsType::Ok,
+        message
+    );
+    alert.run();
+    alert.hide();
 }

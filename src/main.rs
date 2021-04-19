@@ -64,7 +64,8 @@ fn main() {
 
         let window = ApplicationWindow::new(app);
         window.set_title("Bird Counter");
-        window.set_icon_from_file(gui::image_dir().join("bird_icon.png")).map_err(|error| { println!("Error loading icon from file.\nError: {}", error) }).ok();
+        window.set_icon_from_file(gui::image_dir().join("bird_icon.png"))
+            .map_err(|error| { println!("Error loading icon from file.\nError: {}", error) }).ok();
         if *is_fullscreen {
             window.fullscreen();
         } else {
