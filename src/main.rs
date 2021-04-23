@@ -5,6 +5,7 @@ extern crate glib;
 extern crate gtk;
 
 mod gui;
+mod chart;
 
 use gio::prelude::*;
 use gtk::prelude::*;
@@ -43,6 +44,7 @@ impl Sighting {
 }
 
 fn main() {
+    chart::testing();
     let application =
         Application::new(Some("com.github.ggtrigg.bird_counter"), Default::default())
             .expect("failed to initialize GTK application");
@@ -112,4 +114,6 @@ fn handle_local_options(app: &gtk::Application, opts: &glib::VariantDict) -> i32
 }
 
 // To get daily bird sighting data from db...
-// select distinct animal.name, date(seen_at, "unixepoch", "localtime") from sighting left join animal on animal.rowid = sighting.animal_id;
+// select distinct animal.name as name, date(seen_at, "unixepoch", "localtime") as date from sighting left join animal on animal.rowid = sighting.animal_id order by name,date;
+// To get a weekly breakdown...
+// select animal.name, count(distinct date(seen_at, "unixepoch", "localtime")), strftime("%Y%W", seen_at, "unixepoch", "localtime") as week from sighting left join animal on animal.rowid = sighting.animal_id group by animal_id,week;

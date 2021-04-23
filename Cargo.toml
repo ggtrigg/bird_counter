@@ -1,6 +1,6 @@
 [package]
 name = "bird_counter"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Glenn Trigg <ggtrigg@gmail.com>"]
 edition = "2018"
 
@@ -10,6 +10,10 @@ edition = "2018"
 turbosql = "0.1"
 chrono = "0.4.19"
 directories-next = "2.0.0"
+ux-primitives = "0.1"
+ux-dataflow = "0.1"
+ux-animate = "0.1"
+ux-charts = "0.1"
 
 [dependencies.gdk]
 version = "0.13.2"
@@ -22,7 +26,7 @@ version = "0.9.0"
 
 [dependencies.gtk]
 version = "0.9.0"
-features = ["v3_16"]
+features = ["v3_20"]
 
 [dependencies.gio]
 version = ""
