@@ -86,6 +86,8 @@ fn main() {
         abox.add(&label);
         notebook.add(&vbox);
         notebook.add(&abox);
+        notebook.set_tab_label_text(&vbox, "Birds");
+        notebook.set_tab_label_text(&abox, "Charts");
         load_images(&vbox, &animals);
         
         glib::timeout_add_seconds_local(30, move || { refresh_images(&vbox) });
