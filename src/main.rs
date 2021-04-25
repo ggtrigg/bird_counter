@@ -15,7 +15,7 @@ use std::result::Result;
 use turbosql::{Blob, Turbosql};
 
 use chrono::Local;
-use gtk::{Application, ApplicationWindow, Box, GestureSwipe, Notebook, Orientation, Label};
+use gtk::{Application, ApplicationWindow, Box, GesturePan, Notebook, Orientation};
 
 #[derive(Turbosql, Default)]
 pub struct Animal {
@@ -77,15 +77,18 @@ fn main() {
         window.add(&notebook);
         // window.connect_configure_event(detect_resize);
 
-        let gesture = GestureSwipe::new(&notebook);
-        gesture.set_touch_only(true);
-        gesture.connect_swipe(handle_swipe);
+        let gesture = GesturePan::new(&notebook, gtk::Orientation::Horizontal);
+        gesture.set_touch_only(false);
+        gesture.set_propagation_phase(gtk::PropagationPhase::Capture);
+        gesture.set_exclusive(false);
+        gesture.connect_pan(handle_pan);
         let vbox = Box::new(Orientation::Vertical, 5);
         vbox.set_homogeneous(true);
 
         let abox = Box::new(Orientation::Horizontal, 5);
-        let label = Label::new(Some("Sighting chart(s) will go here"));
-        abox.add(&label);
+        // let label = Label::new(Some("Sighting chart(s) will go here"));
+        abox.add(&chart::setup_chart());
+        abox.set_homogeneous(true);
         notebook.add(&vbox);
         notebook.add(&abox);
         load_images(&vbox, &animals);
@@ -101,11 +104,13 @@ fn main() {
 
 fn log_sighting(animal_id: i64) {
     let s = Sighting::new(animal_id);
-    let _oid = s.insert();
+    if let Err(error) = s.insert() {
+        gui::alert(&format!("Error logging sighting - {}", error));
+    }
 }
 
-fn handle_swipe(gesture: &GestureSwipe, vx: f64, vy: f64) {
-    println!("Got gesture! {:?}, velocity {}, {}", gesture, vx, vy);
+fn handle_pan(gesture: &GesturePan, pd: gtk::PanDirection, offset: f64) {
+    println!("Got pan gesture! {:?}, direction {}, offset {}", gesture, pd, offset);
 }
 
 fn handle_local_options(app: &gtk::Application, opts: &glib::VariantDict) -> i32 {

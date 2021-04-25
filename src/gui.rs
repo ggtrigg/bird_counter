@@ -218,7 +218,7 @@ fn _detect_resize(_widget: &Image, event: &EventConfigure) -> bool {
     false
 }
 
-fn alert(message: &str) -> () {
+pub fn alert(message: &str) -> () {
     let alert = MessageDialog::new::<Window>(
         None,
         gtk::DialogFlags::DESTROY_WITH_PARENT,

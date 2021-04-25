@@ -1,4 +1,4 @@
-use animate::CairoCanvas;
+use animate::Canvas;
 use charts::{Chart, LineChart, LineChartOptions};
 use dataflow::*;
 use gtk::prelude::*;
@@ -90,9 +90,9 @@ fn create_stream() -> DataStream<'static, &'static str, i32> {
     DataStream::new(metadata, frames)
 }
 
-fn setup_chart () -> () {
+pub fn setup_chart () -> gtk::DrawingArea {
     let drawing_area = Box::new(gtk::DrawingArea::new)();
-    let default_size = (800.0, 400.0);
+    // let default_size = (800.0, 400.0);
     // let padding = 30.0;
 
     let stream = create_stream();
@@ -101,7 +101,7 @@ fn setup_chart () -> () {
     options.channel.labels = Some(Default::default());
     options.channel.fill_opacity = 0.25;
     options.yaxis.min_interval = Some(2.);
-    options.title.text = Some("Line Chart Demo");
+    options.title.text = Some("Weekly Bird Sightings");
 
     let mut chart = LineChart::new(options);
     chart.set_stream(stream);
@@ -113,9 +113,11 @@ fn setup_chart () -> () {
 
         chart.resize(size.0, size.1);
 
-        let ctx = CairoCanvas::new(cr); // overhead
+        let ctx = Canvas::new(cr); // overhead
         chart.draw(&ctx);
 
         Inhibit(false)
     });
+    
+    drawing_area
 }
