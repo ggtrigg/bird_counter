@@ -14,12 +14,10 @@ ux-primitives = "0.1"
 ux-dataflow = "0.1"
 ux-animate = "0.1"
 ux-charts = "0.1"
+glib = "0.10.3"
 
 [dependencies.gdk]
 version = "0.13.2"
-
-[dependencies.glib]
-version = "0.10.3"
 
 [dependencies.gdk-pixbuf]
 version = "0.9.0"

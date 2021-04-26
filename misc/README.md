@@ -6,6 +6,6 @@ This directory contains the custom docker image configuration file used for cros
 
 The command (run from this directory) used to build the container image is:
 
-    cargo build -t my/gtk-armv7-unknown-linux-gnueabihf . -f ./Dockerfile.gtk-armv7-unknown-linux-gnueabihf
+    podman build -t my/gtk-armv7-unknown-linux-gnueabihf . -f ./Dockerfile.gtk-armv7-unknown-linux-gnueabihf
 
 See the main README for running the container to cross-compile.
