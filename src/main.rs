@@ -14,7 +14,7 @@ use std::result::Result;
 use turbosql::{Blob, Turbosql};
 
 use chrono::Local;
-use gtk::{Application, ApplicationWindow, Box, GestureSwipe, Notebook, Orientation, Label};
+use gtk::{Application, ApplicationWindow, Box, GesturePan, Stack, Orientation, Label};
 
 #[derive(Turbosql, Default)]
 pub struct Animal {
@@ -68,26 +68,42 @@ fn main() {
             .map_err(|error| { println!("Error loading icon from file.\nError: {}", error) }).ok();
         if *is_fullscreen {
             window.fullscreen();
-        } else {
-            // window.set_default_size(350, 70);
         }
-        let notebook = Notebook::new();
+        let notebook = Stack::new();
         window.add(&notebook);
-        // window.connect_configure_event(detect_resize);
 
-        let gesture = GestureSwipe::new(&notebook);
-        gesture.set_touch_only(true);
-        gesture.connect_swipe(handle_swipe);
         let vbox = Box::new(Orientation::Vertical, 5);
         vbox.set_homogeneous(true);
 
-        let abox = Box::new(Orientation::Horizontal, 5);
-        let label = Label::new(Some("Sighting chart(s) will go here"));
-        abox.add(&label);
-        notebook.add(&vbox);
-        notebook.add(&abox);
-        notebook.set_tab_label_text(&vbox, "Birds");
-        notebook.set_tab_label_text(&abox, "Charts");
+        let cbox = Box::new(Orientation::Horizontal, 5);
+        // cbox.add(&chart::setup_chart());
+        cbox.set_homogeneous(true);
+        
+        let label = Label::new(Some("A placeholder label"));
+        cbox.add(&label);
+
+        notebook.add_named(&vbox, "birds");
+        notebook.add_named(&cbox, "charts");
+        notebook.set_homogeneous(true);
+        notebook.set_transition_type(gtk::StackTransitionType::SlideLeft);
+
+        let gesture = GesturePan::new(&notebook, gtk::Orientation::Horizontal);
+        gesture.set_propagation_phase(gtk::PropagationPhase::Capture);
+        gesture.connect_pan(move |gesture, direction, offset| {
+            if offset > 150.0 {
+                if let Some(nb) = gesture.get_widget() {
+                    if let Ok(nbook) = nb.downcast::<gtk::Stack>() {
+                        match direction {
+                            gtk::PanDirection::Left => nbook.set_visible_child_full("charts", gtk::StackTransitionType::SlideLeft),
+                            gtk::PanDirection::Right => nbook.set_visible_child_full("birds", gtk::StackTransitionType::SlideRight),
+                            _ => ()
+                        }
+                    }
+                }
+            }
+        });
+        unsafe { notebook.set_data("gesture", gesture); }
+
         load_images(&vbox, &animals);
         
         glib::timeout_add_seconds_local(30, move || { refresh_images(&vbox) });
@@ -104,8 +120,10 @@ fn log_sighting(animal_id: i64) {
     let _oid = s.insert();
 }
 
-fn handle_swipe(gesture: &GestureSwipe, vx: f64, vy: f64) {
-    println!("Got gesture! {:?}, velocity {}, {}", gesture, vx, vy);
+fn _handle_pan(gesture: &GesturePan, pd: gtk::PanDirection, offset: f64) {
+    if offset > 200.0 {
+        println!("Got pan gesture! {:?}, direction {}, offset {}", gesture, pd, offset);
+    }
 }
 
 fn handle_local_options(app: &gtk::Application, opts: &glib::VariantDict) -> i32 {
