@@ -69,8 +69,8 @@ fn main() {
         if *is_fullscreen {
             window.fullscreen();
         }
-        let notebook = Stack::new();
-        window.add(&notebook);
+        let stack = Stack::new();
+        window.add(&stack);
 
         let vbox = Box::new(Orientation::Vertical, 5);
         vbox.set_homogeneous(true);
@@ -82,12 +82,12 @@ fn main() {
         let label = Label::new(Some("A placeholder label"));
         cbox.add(&label);
 
-        notebook.add_named(&vbox, "birds");
-        notebook.add_named(&cbox, "charts");
-        notebook.set_homogeneous(true);
-        notebook.set_transition_type(gtk::StackTransitionType::SlideLeft);
+        stack.add_named(&vbox, "birds");
+        stack.add_named(&cbox, "charts");
+        stack.set_homogeneous(true);
+        stack.set_transition_type(gtk::StackTransitionType::SlideLeft);
 
-        let gesture = GesturePan::new(&notebook, gtk::Orientation::Horizontal);
+        let gesture = GesturePan::new(&stack, gtk::Orientation::Horizontal);
         gesture.set_propagation_phase(gtk::PropagationPhase::Capture);
         gesture.connect_pan(move |gesture, direction, offset| {
             if offset > 150.0 {
@@ -102,7 +102,7 @@ fn main() {
                 }
             }
         });
-        unsafe { notebook.set_data("gesture", gesture); }
+        unsafe { stack.set_data("gesture", gesture); }
 
         load_images(&vbox, &animals);
         
