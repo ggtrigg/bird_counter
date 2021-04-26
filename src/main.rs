@@ -70,27 +70,37 @@ fn main() {
             .map_err(|error| { println!("Error loading icon from file.\nError: {}", error) }).ok();
         if *is_fullscreen {
             window.fullscreen();
-        } else {
-            // window.set_default_size(350, 70);
         }
         let notebook = Notebook::new();
         window.add(&notebook);
-        // window.connect_configure_event(detect_resize);
 
-        let gesture = GesturePan::new(&notebook, gtk::Orientation::Horizontal);
-        gesture.set_touch_only(false);
-        gesture.set_propagation_phase(gtk::PropagationPhase::Capture);
-        gesture.set_exclusive(false);
-        gesture.connect_pan(handle_pan);
         let vbox = Box::new(Orientation::Vertical, 5);
         vbox.set_homogeneous(true);
 
-        let abox = Box::new(Orientation::Horizontal, 5);
-        // let label = Label::new(Some("Sighting chart(s) will go here"));
-        abox.add(&chart::setup_chart());
-        abox.set_homogeneous(true);
+        let cbox = Box::new(Orientation::Horizontal, 5);
+        cbox.add(&chart::setup_chart());
+        cbox.set_homogeneous(true);
+
         notebook.add(&vbox);
-        notebook.add(&abox);
+        notebook.add(&cbox);
+
+        let gesture = GesturePan::new(&notebook, gtk::Orientation::Horizontal);
+        gesture.set_propagation_phase(gtk::PropagationPhase::Capture);
+        gesture.connect_pan(move |gesture, direction, offset| {
+            if offset > 150.0 {
+                if let Some(nb) = gesture.get_widget() {
+                    if let Ok(nbook) = nb.downcast::<gtk::Notebook>() {
+                        match direction {
+                            gtk::PanDirection::Left => nbook.next_page(),
+                            gtk::PanDirection::Right => nbook.prev_page(),
+                            _ => ()
+                        }
+                    }
+                }
+            }
+        });
+        unsafe { notebook.set_data("gesture", gesture); }
+
         load_images(&vbox, &animals);
         
         glib::timeout_add_seconds_local(30, move || { refresh_images(&vbox) });
@@ -109,8 +119,10 @@ fn log_sighting(animal_id: i64) {
     }
 }
 
-fn handle_pan(gesture: &GesturePan, pd: gtk::PanDirection, offset: f64) {
-    println!("Got pan gesture! {:?}, direction {}, offset {}", gesture, pd, offset);
+fn _handle_pan(gesture: &GesturePan, pd: gtk::PanDirection, offset: f64) {
+    if offset > 200.0 {
+        println!("Got pan gesture! {:?}, direction {}, offset {}", gesture, pd, offset);
+    }
 }
 
 fn handle_local_options(app: &gtk::Application, opts: &glib::VariantDict) -> i32 {
