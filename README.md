@@ -7,7 +7,7 @@ report bird sightings per time period.
 The intention is to run this on a Raspberry Pi with a touch screen as a simple and handy device for keeping track of
 bird type occurances of the year.
 
-![Screenshot](https://github.com/ggtrigg/bird_counter/blob/master/images/Screenshot%20from%202021-04-14%2013-22-25.png)
+![Screenshot](https://github.com/ggtrigg/bird_counter/blob/master/images/screenshot.png)
 
 ## Installation
 
