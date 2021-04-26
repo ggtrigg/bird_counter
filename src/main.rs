@@ -15,7 +15,7 @@ use std::result::Result;
 use turbosql::{Blob, Turbosql};
 
 use chrono::Local;
-use gtk::{Application, ApplicationWindow, Box, GesturePan, Notebook, Orientation};
+use gtk::{Application, ApplicationWindow, Box, GesturePan, Stack, Orientation};
 
 #[derive(Turbosql, Default)]
 pub struct Animal {
@@ -71,35 +71,39 @@ fn main() {
         if *is_fullscreen {
             window.fullscreen();
         }
-        let notebook = Notebook::new();
-        window.add(&notebook);
+        let stack = Stack::new();
+        window.add(&stack);
 
         let vbox = Box::new(Orientation::Vertical, 5);
         vbox.set_homogeneous(true);
 
         let cbox = Box::new(Orientation::Horizontal, 5);
-        cbox.add(&chart::setup_chart());
+        // cbox.add(&chart::setup_chart());
         cbox.set_homogeneous(true);
+        
+        cbox.add(&chart::setup_chart());
 
-        notebook.add(&vbox);
-        notebook.add(&cbox);
+        stack.add_named(&vbox, "birds");
+        stack.add_named(&cbox, "charts");
+        stack.set_homogeneous(true);
+        stack.set_transition_type(gtk::StackTransitionType::SlideLeft);
 
-        let gesture = GesturePan::new(&notebook, gtk::Orientation::Horizontal);
+        let gesture = GesturePan::new(&stack, gtk::Orientation::Horizontal);
         gesture.set_propagation_phase(gtk::PropagationPhase::Capture);
         gesture.connect_pan(move |gesture, direction, offset| {
             if offset > 150.0 {
                 if let Some(nb) = gesture.get_widget() {
-                    if let Ok(nbook) = nb.downcast::<gtk::Notebook>() {
+                    if let Ok(nbook) = nb.downcast::<gtk::Stack>() {
                         match direction {
-                            gtk::PanDirection::Left => nbook.next_page(),
-                            gtk::PanDirection::Right => nbook.prev_page(),
+                            gtk::PanDirection::Left => nbook.set_visible_child_full("charts", gtk::StackTransitionType::SlideLeft),
+                            gtk::PanDirection::Right => nbook.set_visible_child_full("birds", gtk::StackTransitionType::SlideRight),
                             _ => ()
                         }
                     }
                 }
             }
         });
-        unsafe { notebook.set_data("gesture", gesture); }
+        unsafe { stack.set_data("gesture", gesture); }
 
         load_images(&vbox, &animals);
         
