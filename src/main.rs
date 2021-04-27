@@ -90,7 +90,7 @@ fn main() {
         let gesture = GesturePan::new(&stack, gtk::Orientation::Horizontal);
         gesture.set_propagation_phase(gtk::PropagationPhase::Capture);
         gesture.connect_pan(move |gesture, direction, offset| {
-            if offset > 150.0 {
+            if offset > 50.0 {
                 if let Some(nb) = gesture.get_widget() {
                     if let Ok(nbook) = nb.downcast::<gtk::Stack>() {
                         match direction {
