@@ -106,7 +106,7 @@ fn main() {
 
         load_images(&vbox, &animals);
         
-        glib::timeout_add_seconds_local(30, move || { refresh_images(&vbox) });
+        glib::timeout_add_seconds_local(300, move || { refresh_images(&vbox) });
 
         window.show_all();
     });
