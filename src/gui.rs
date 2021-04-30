@@ -7,10 +7,9 @@ use directories_next::ProjectDirs;
 use gtk::prelude::*;
 use gdk::prelude::*;
 use gtk::{
-    Box, Entry, EventBox, FileChooserAction, FileChooserDialog, FileFilter, Image, MessageDialog,
+    Box, Entry, EventBox, FileChooserAction, FileChooserDialog, FileFilter, MessageDialog,
     Orientation, ResponseType, Window, DrawingArea
 };
-use gdk::{EventConfigure};
 use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
@@ -211,11 +210,6 @@ pub fn refresh_images(vbox: &gtk::Box) -> glib::Continue {
     });
     vbox.show_all();
     glib::Continue(true)
-}
-
-fn _detect_resize(_widget: &Image, event: &EventConfigure) -> bool {
-    println!("In detect_resize(), event: {:?}", event.get_size());
-    false
 }
 
 pub fn alert(message: &str) -> () {

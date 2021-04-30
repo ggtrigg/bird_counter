@@ -5,6 +5,12 @@ use gtk::prelude::*;
 use turbosql::select;
 
 #[derive(Debug, Eq, PartialEq, Clone)]
+struct ChannelData {
+    name: Option<String>,
+    tag: Option<u8>
+}
+
+#[derive(Debug, Eq, PartialEq, Clone)]
 struct NameAndCountResult {
     name: Option<String>,
     week: Option<String>,
@@ -33,23 +39,33 @@ pub fn testing() {
 
 
 fn create_stream() -> DataStream<'static, &'static str, i32> {
-    let metadata = vec![
-        Channel {
-            name: "Series 1",
-            tag: 0,
-            visible: true,
-        },
-        Channel {
-            name: "Series 2",
-            tag: 1,
-            visible: true,
-        },
-        Channel {
-            name: "Series 3",
-            tag: 2,
-            visible: true,
-        },
-    ];
+    let mut metadata = Vec::new();
+    let md1: Vec<ChannelData> =
+            turbosql::select!(Vec<ChannelData> "name, rowid as tag from animal").expect("Couldn't retrieve animals");
+    for cdata in md1 {
+        metadata.push(Channel {
+           name: &cdata.name.unwrap()[..],
+           tag: cdata.tag.unwrap(),
+           visible: true 
+        });
+    }
+    // let metadata = vec![
+    //     Channel {
+    //         name: "Series 1",
+    //         tag: 0,
+    //         visible: true,
+    //     },
+    //     Channel {
+    //         name: "Series 2",
+    //         tag: 1,
+    //         visible: true,
+    //     },
+    //     Channel {
+    //         name: "Series 3",
+    //         tag: 2,
+    //         visible: true,
+    //     },
+    // ];
 
     // Zero stream tag is allways metric
     let mut frames = vec![DataFrame {
@@ -90,7 +106,7 @@ fn create_stream() -> DataStream<'static, &'static str, i32> {
     DataStream::new(metadata, frames)
 }
 
-pub fn setup_chart () -> gtk::DrawingArea {
+pub fn setup_chart() -> gtk::DrawingArea {
     let drawing_area = Box::new(gtk::DrawingArea::new)();
     // let default_size = (800.0, 400.0);
     // let padding = 30.0;
