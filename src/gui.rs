@@ -133,8 +133,18 @@ fn load_image(_animal: Option<&Animal>) -> gtk::DrawingArea {
 fn draw_image(da: &gtk::DrawingArea, context: &cairo::Context) -> gtk::Inhibit {
     if let Some(eventbox) = da.get_parent() {
         if let Some(animal_id) = unsafe { eventbox.get_data::<i64>("animal") } {
-            let pb = get_animal_pixbuf(animal_id, da.get_allocated_width(), da.get_allocated_height());
-            context.set_source_pixbuf(&pb, 0.0, 0.0);
+            let a_width = da.get_allocated_width();
+            let a_height = da.get_allocated_height();
+            let diff = a_width - a_height;
+            let pb = get_animal_pixbuf(animal_id, a_width, a_height);
+            let mut x_offset = 0.0;
+            let mut y_offset = 0.0;
+            if diff < 0 {
+                y_offset = -diff as f64 / 2.0;
+            } else {
+                x_offset = diff as f64 / 2.0;
+            }
+            context.set_source_pixbuf(&pb, x_offset, y_offset);
             context.paint();
         }
     }
