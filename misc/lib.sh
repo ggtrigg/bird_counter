@@ -1,7 +1,7 @@
 purge_list=()
 
 install_packages() {
-    if grep -i ubuntu /etc/os-release; then
+    if egrep -i 'ubuntu|debian' /etc/os-release; then
         apt-get update
 
         for pkg in "${@}"; do
@@ -24,7 +24,7 @@ install_packages() {
 
 purge_packages() {
     if (( ${#purge_list[@]} )); then
-        if grep -i ubuntu /etc/os-release; then
+        if egrep -i 'ubuntu|debian' /etc/os-release; then
             apt-get purge --assume-yes --auto-remove "${purge_list[@]}"
         else
             yum remove -y "${purge_list[@]}"
@@ -40,6 +40,12 @@ if_centos() {
 
 if_ubuntu() {
     if grep -q -i ubuntu /etc/os-release; then
+        eval "${@}"
+    fi
+}
+
+if_debian() {
+    if grep -q -i debian /etc/os-release; then
         eval "${@}"
     fi
 }
