@@ -8,13 +8,14 @@ edition = "2018"
 
 [dependencies]
 turbosql = "0.1"
-chrono = "0.4.19"
+chrono = "0.4"
 directories-next = "2.0.0"
 ux-primitives = "0.1"
 ux-dataflow = "0.1"
 ux-animate = "0.1"
 ux-charts = "0.1"
 glib = "0.10.3"
+intmap = "0.7"
 
 [dependencies.gdk]
 version = "0.13.2"

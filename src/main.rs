@@ -44,7 +44,6 @@ impl Sighting {
 }
 
 fn main() {
-    chart::testing();
     let application =
         Application::new(Some("com.github.ggtrigg.bird_counter"), Default::default())
             .expect("failed to initialize GTK application");

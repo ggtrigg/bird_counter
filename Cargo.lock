@@ -74,6 +74,7 @@ dependencies = [
  "gio",
  "glib",
  "gtk",
+ "intmap",
  "turbosql",
  "ux-animate",
  "ux-charts",
