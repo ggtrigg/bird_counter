@@ -33,7 +33,7 @@ fn create_stream<'a>(namedata: &'a Vec<ChannelData>, weeks: &Vec<u32>, week_labe
     let mut metadata = Vec::new();
     for cdata in namedata {
         metadata.push(Channel {
-           name: &cdata.name.unwrap()[..],
+           name: &cdata.name.clone().unwrap()[..],
            tag: cdata.tag.unwrap(),
            visible: true 
         });
@@ -58,8 +58,8 @@ fn create_stream<'a>(namedata: &'a Vec<ChannelData>, weeks: &Vec<u32>, week_labe
         for bnum in 0..metadata.len() {
             imap.insert(bnum as u64, sdata[bnum][i] as i32);
         }
-        frames.push(DataFrame::<String, i32> {
-           metric: week_labels[i],
+        frames.push(DataFrame {
+           metric: &week_labels[i][..],
            data: imap
         });
     }
