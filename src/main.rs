@@ -5,6 +5,7 @@ extern crate glib;
 extern crate gtk;
 
 mod gui;
+mod chart;
 
 use gio::prelude::*;
 use gtk::prelude::*;
@@ -14,7 +15,7 @@ use std::result::Result;
 use turbosql::{Blob, Turbosql};
 
 use chrono::Local;
-use gtk::{Application, ApplicationWindow, Box, GesturePan, Stack, Orientation, Label};
+use gtk::{Application, ApplicationWindow, Box, GesturePan, Stack, Orientation};
 
 #[derive(Turbosql, Default)]
 pub struct Animal {
@@ -79,14 +80,13 @@ fn main() {
         // cbox.add(&chart::setup_chart());
         cbox.set_homogeneous(true);
         
-        let label = Label::new(Some("A placeholder label"));
-        cbox.add(&label);
+        cbox.add(&chart::setup_chart());
 
         stack.add_named(&vbox, "birds");
         stack.add_named(&cbox, "charts");
         stack.set_homogeneous(true);
         stack.set_transition_type(gtk::StackTransitionType::SlideLeft);
-
+        
         let gesture = GesturePan::new(&stack, gtk::Orientation::Horizontal);
         gesture.set_propagation_phase(gtk::PropagationPhase::Capture);
         gesture.connect_pan(move |gesture, direction, offset| {
@@ -117,7 +117,9 @@ fn main() {
 
 fn log_sighting(animal_id: i64) {
     let s = Sighting::new(animal_id);
-    let _oid = s.insert();
+    if let Err(error) = s.insert() {
+        gui::alert(&format!("Error logging sighting - {}", error));
+    }
 }
 
 fn _handle_pan(gesture: &GesturePan, pd: gtk::PanDirection, offset: f64) {
@@ -132,4 +134,6 @@ fn handle_local_options(app: &gtk::Application, opts: &glib::VariantDict) -> i32
 }
 
 // To get daily bird sighting data from db...
-// select distinct animal.name, date(seen_at, "unixepoch", "localtime") from sighting left join animal on animal.rowid = sighting.animal_id;
+// select distinct animal.name as name, date(seen_at, "unixepoch", "localtime") as date from sighting left join animal on animal.rowid = sighting.animal_id order by name,date;
+// To get a weekly breakdown...
+// select animal.name, count(distinct date(seen_at, "unixepoch", "localtime")), strftime("%Y%W", seen_at, "unixepoch", "localtime") as week from sighting left join animal on animal.rowid = sighting.animal_id group by animal_id,week;

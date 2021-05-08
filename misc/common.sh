@@ -36,3 +36,8 @@ if_ubuntu install_packages \
     g++ \
     libc6-dev \
     pkg-config
+
+if_debian install_packages \
+    g++ \
+    libc6-dev \
+    pkg-config
