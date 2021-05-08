@@ -86,7 +86,7 @@ fn main() {
         stack.add_named(&cbox, "charts");
         stack.set_homogeneous(true);
         stack.set_transition_type(gtk::StackTransitionType::SlideLeft);
-
+        
         let gesture = GesturePan::new(&stack, gtk::Orientation::Horizontal);
         gesture.set_propagation_phase(gtk::PropagationPhase::Capture);
         gesture.connect_pan(move |gesture, direction, offset| {

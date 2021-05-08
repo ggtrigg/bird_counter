@@ -1,6 +1,6 @@
 use std::iter::{FromIterator, Iterator};
 use animate::Canvas;
-use charts::{Chart, LineChart, LineChartOptions};
+use charts::{Chart, BarChart, BarChartOptions, Position};
 use dataflow::*;
 use intmap::IntMap;
 use chrono::prelude::*;
@@ -28,12 +28,11 @@ fn get_sightings(animal_id: u32) -> Vec<WeekAndCountResult> {
     }
 }
 
-fn create_stream<'a>(namedata: &'a Vec<ChannelData>, weeks: &Vec<u32>, week_labels: &'a Vec<String>)
-    -> DataStream<'a, &'a str, i32> {
+fn create_stream(namedata: &Vec<ChannelData>, weeks: &Vec<u32>, week_labels: &Vec<String>) -> DataStream<String, i32> {
     let mut metadata = Vec::new();
     for cdata in namedata {
         metadata.push(Channel {
-           name: &cdata.name.clone().unwrap()[..],
+           name: cdata.name.clone().unwrap(),
            tag: cdata.tag.unwrap(),
            visible: true 
         });
@@ -59,7 +58,7 @@ fn create_stream<'a>(namedata: &'a Vec<ChannelData>, weeks: &Vec<u32>, week_labe
             imap.insert(bnum as u64, sdata[bnum][i] as i32);
         }
         frames.push(DataFrame {
-           metric: &week_labels[i][..],
+           metric: week_labels[i].clone(),
            data: imap
         });
     }
@@ -85,25 +84,25 @@ pub fn setup_chart() -> gtk::DrawingArea {
         }
     }).rev().collect();
 
-    // let default_size = (800.0, 400.0);
-    // let padding = 30.0;
-
     let stream = create_stream(&an, &weeks, &week_labels);
+    // println!("meta: {:?}", stream.meta);
+    // println!("frames: {:?}", stream.frames);
 
-    let mut options: LineChartOptions = Default::default();
+    let mut options: BarChartOptions = Default::default();
     options.channel.labels = Some(Default::default());
-    options.channel.fill_opacity = 0.25;
-    options.yaxis.min_interval = Some(2.);
-    options.title.text = Some("Weekly Bird Sightings");
-    options.xaxis.title.text = Some("Weeks Ago");
+    options.yaxis.min_interval = Some(1.);
+    options.title.text = Some("Weekly Bird Sightings".to_string());
+    options.xaxis.title.text = Some("Weeks Ago".to_string());
+    options.legend.position = Position::Top;
+    options.legend.label_formatter = Some(charts::default_label_formatter);
+    options.legend.style = Default::default();
 
-    let mut chart = LineChart::new(options);
+    let mut chart = BarChart::new(options);
     chart.set_stream(stream);
 
     drawing_area.connect_draw(move |area, cr| {
         let (rect, _) = area.get_allocated_size();
         let size = (rect.width as f64, rect.height as f64);
-        // let chart_area: (f64, f64) = (size.0 - padding * 2.0, size.1 - padding * 2.0);
 
         chart.resize(size.0, size.1);
 
