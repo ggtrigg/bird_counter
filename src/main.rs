@@ -12,7 +12,7 @@ use gtk::prelude::*;
 pub use gui::*;
 use std::env::args;
 use std::result::Result;
-use turbosql::{Blob, Turbosql};
+use turbosql::{Blob, Turbosql, execute};
 
 use chrono::Local;
 use gtk::{Application, ApplicationWindow, Box, GesturePan, Stack, Orientation};
@@ -77,7 +77,6 @@ fn main() {
         vbox.set_homogeneous(true);
 
         let cbox = Box::new(Orientation::Horizontal, 5);
-        // cbox.add(&chart::setup_chart());
         cbox.set_homogeneous(true);
         
         cbox.add(&chart::setup_chart());
@@ -91,8 +90,8 @@ fn main() {
         gesture.set_propagation_phase(gtk::PropagationPhase::Capture);
         gesture.connect_pan(move |gesture, direction, offset| {
             if offset > 50.0 {
-                if let Some(nb) = gesture.get_widget() {
-                    if let Ok(nbook) = nb.downcast::<gtk::Stack>() {
+                if let Some(widget) = gesture.get_widget() {
+                    if let Ok(nbook) = widget.downcast::<gtk::Stack>() {
                         match direction {
                             gtk::PanDirection::Left => nbook.set_visible_child_full("charts", gtk::StackTransitionType::SlideLeft),
                             gtk::PanDirection::Right => nbook.set_visible_child_full("birds", gtk::StackTransitionType::SlideRight),
@@ -122,10 +121,8 @@ fn log_sighting(animal_id: i64) {
     }
 }
 
-fn _handle_pan(gesture: &GesturePan, pd: gtk::PanDirection, offset: f64) {
-    if offset > 200.0 {
-        println!("Got pan gesture! {:?}, direction {}, offset {}", gesture, pd, offset);
-    }
+pub fn clear_sighting(animal_id: i64) {
+    execute!(r#"DELETE FROM sighting WHERE animal_id = ? AND date(seen_at, "unixepoch", "localtime") = date("now", "localtime")"#, animal_id).ok();
 }
 
 fn handle_local_options(app: &gtk::Application, opts: &glib::VariantDict) -> i32 {

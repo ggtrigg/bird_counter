@@ -8,7 +8,7 @@ use gtk::prelude::*;
 use gdk::prelude::*;
 use gtk::{
     Box, Entry, EventBox, FileChooserAction, FileChooserDialog, FileFilter, MessageDialog,
-    Orientation, ResponseType, Window, DrawingArea
+    Orientation, ResponseType, Window, DrawingArea, GestureLongPress
 };
 use std::fs;
 use std::path::Path;
@@ -37,8 +37,43 @@ pub fn load_images(vbox: &Box, animals: &Vec<Animal>) {
             }
             ebox.add(&img);
             ebox.set_above_child(true);
-            ebox.connect_button_release_event(animal_selected);
+            ebox.connect_event(move |widget, event| {
+               let event_type = event.get_event_type();
+               if event_type == gdk::EventType::ButtonPress || event_type == gdk::EventType::TouchBegin {
+                   let coords = event.get_coords().unwrap_or((0.0, 0.0));
+                   unsafe { widget.set_data("last_coords", (coords.0, coords.1, event.get_time())) };
+               } else if event_type == gdk::EventType::ButtonRelease || event_type == gdk::EventType::TouchEnd {
+                    if let Some(last_coords) = unsafe { widget.get_data::<(f64, f64, u32)>("last_coords") } {
+                        let coords = event.get_coords().unwrap_or((0.0, 0.0));
+                        if (last_coords.0 == coords.0) && (last_coords.1 == coords.1) && (event.get_time() - last_coords.2 < 500) {
+                            animal_selected(widget);
+                        }
+                    }
+               }
+               Inhibit(false)
+            });
             hbox.pack_start(&ebox, true, true, 0);
+            
+            // Add long press gesture to clear selection.
+            let gesture = GestureLongPress::new(&ebox);
+            gesture.set_propagation_phase(gtk::PropagationPhase::Capture);
+            gesture.connect_pressed(|gesture, _x, _y| {
+               if let Some(widget) = gesture.get_widget() {
+                   if let Ok(eventbox) = widget.downcast::<gtk::EventBox>() {
+                       if let Some(animal_id) = unsafe { eventbox.get_data::<i64>("animal") } {
+                           crate::clear_sighting(*animal_id);
+                       }
+                       if let Some(widget) = eventbox.get_parent() {
+                           if let Some(w2) = widget.get_parent() {
+                               if let Ok(vbox) = w2.downcast::<gtk::Box>() {
+                                   refresh_images(&vbox);
+                               }
+                           }
+                       }
+                   }
+                }
+            });
+            unsafe { ebox.set_data("gesture", gesture); }
         }
     }
 }
@@ -53,7 +88,7 @@ pub fn image_dir() -> PathBuf {
     image_dir
 }
 
-fn animal_selected(object: &EventBox, _event: &gdk::EventButton) -> gtk::Inhibit {
+fn animal_selected(object: &EventBox) {
     if let Some(animal_id) = unsafe { object.get_data::<i64>("animal") } {
         if *animal_id != 0 {
             if let Some(child) = object.get_child() {
@@ -119,7 +154,6 @@ fn animal_selected(object: &EventBox, _event: &gdk::EventButton) -> gtk::Inhibit
             dialog.hide();
         }
     }
-    Inhibit(true)
 }
 
 fn load_image(_animal: Option<&Animal>) -> gtk::DrawingArea {
