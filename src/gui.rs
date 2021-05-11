@@ -232,7 +232,7 @@ fn add_tick(dest_pb: &gdk_pixbuf::Pixbuf) {
     }
 }
 
-pub fn refresh_images(vbox: &gtk::Box) -> glib::Continue {
+pub fn refresh_images(vbox: &gtk::Box) -> () {
     vbox.foreach(|child| {
         if let Some(hbox) = child.downcast_ref::<gtk::Box>() {
             hbox.foreach(|child| {
@@ -253,7 +253,6 @@ pub fn refresh_images(vbox: &gtk::Box) -> glib::Continue {
         }
     });
     vbox.show_all();
-    glib::Continue(true)
 }
 
 pub fn alert(message: &str) -> () {

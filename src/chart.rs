@@ -1,6 +1,7 @@
 use std::iter::{FromIterator, Iterator};
+use primitives::colorspace::prelude::*;
+use charts::{Chart, BarChart, BarChartOptions, Position, Fill};
 use animate::Canvas;
-use charts::{Chart, BarChart, BarChartOptions, Position};
 use dataflow::*;
 use intmap::IntMap;
 use chrono::prelude::*;
@@ -28,9 +29,25 @@ fn get_sightings(animal_id: u32) -> Vec<WeekAndCountResult> {
     }
 }
 
-fn create_stream(namedata: &Vec<ChannelData>, weeks: &Vec<u32>, week_labels: &Vec<String>) -> DataStream<String, i32> {
+fn create_stream() -> DataStream<String, i32> {
     let mut metadata = Vec::new();
-    for cdata in namedata {
+    let an = turbosql::select!(Vec<ChannelData> "name, rowid as tag from animal").expect("Couldn't retrieve animals");
+    
+    // Get the start and end (current) week values, and derive the x-axis week labels
+    let first_week: String = select!(String r#"min(strftime("%Y%W", seen_at, "unixepoch", "localtime")) as week from sighting"#).expect("Error accesing db");
+    let this_week = Local::now().format("%Y%W").to_string();
+    let first_week_n = first_week.parse::<u32>().unwrap();
+    let this_week_n = this_week.parse::<u32>().unwrap();
+    let weeks = Vec::from_iter(first_week_n..=this_week_n);
+    let week_labels: Vec<String> = weeks.iter().enumerate().map(|(i, _)| {
+        match i {
+            0 => String::from("This week"),
+            1 => String::from("Last week"),
+            _ => (i as u32 + 1).to_string()
+        }
+    }).rev().collect();
+    
+    for cdata in an {
         metadata.push(Channel {
            name: cdata.name.clone().unwrap(),
            tag: cdata.tag.unwrap(),
@@ -40,8 +57,8 @@ fn create_stream(namedata: &Vec<ChannelData>, weeks: &Vec<u32>, week_labels: &Ve
 
     let mut sdata: Vec<Vec<u32>> = vec![vec![0; weeks.len() as usize]; metadata.len()];
 
-    for (i, animal_id) in namedata.iter().enumerate() {
-        let sightings = get_sightings(animal_id.tag.unwrap() as u32);
+    for (i, channel) in metadata.iter().enumerate() {
+        let sightings = get_sightings(channel.tag as u32);
         for sighting in sightings {
             if let Some(week) = sighting.week {
                 let week_num = week.parse::<u32>().unwrap();
@@ -68,26 +85,14 @@ fn create_stream(namedata: &Vec<ChannelData>, weeks: &Vec<u32>, week_labels: &Ve
 
 pub fn setup_chart() -> gtk::DrawingArea {
     let drawing_area = Box::new(gtk::DrawingArea::new)();
-    let an = turbosql::select!(Vec<ChannelData> "name, rowid as tag from animal").expect("Couldn't retrieve animals");
+
+    update_chart(&drawing_area);
     
-    // Get the start and end (current) week values, and derive the x-axis week labels
-    let first_week: String = select!(String r#"min(strftime("%Y%W", seen_at, "unixepoch", "localtime")) as week from sighting"#).expect("Error accesing db");
-    let this_week = Local::now().format("%Y%W").to_string();
-    let first_week_n = first_week.parse::<u32>().unwrap();
-    let this_week_n = this_week.parse::<u32>().unwrap();
-    let weeks = Vec::from_iter(first_week_n..=this_week_n);
-    let week_labels: Vec<String> = weeks.iter().enumerate().map(|(i, _)| {
-        match i {
-            0 => String::from("This week"),
-            1 => String::from("Last week"),
-            _ => (i as u32 + 1).to_string()
-        }
-    }).rev().collect();
+    drawing_area
+}
 
-    let stream = create_stream(&an, &weeks, &week_labels);
-    // println!("meta: {:?}", stream.meta);
-    // println!("frames: {:?}", stream.frames);
-
+pub fn update_chart(drawing_area: &gtk::DrawingArea) -> () {
+    let stream = create_stream();
     let mut options: BarChartOptions = Default::default();
     options.channel.labels = Some(Default::default());
     options.yaxis.min_interval = Some(1.);
@@ -96,10 +101,21 @@ pub fn setup_chart() -> gtk::DrawingArea {
     options.legend.position = Position::Top;
     options.legend.label_formatter = Some(charts::default_label_formatter);
     options.legend.style = Default::default();
+    // These colours are from the OpenOffice charts palette.
+    options.colors = vec![
+        Fill::Solid(Color::rgb(0x00, 0x45, 0x86)),
+        Fill::Solid(Color::rgb(0xff, 0x42, 0x0e)),
+        Fill::Solid(Color::rgb(0xff, 0xd3, 0x20)),
+        Fill::Solid(Color::rgb(0x57, 0x9d, 0x1c)),
+        Fill::Solid(Color::rgb(0x7e, 0x00, 0x21)),
+        Fill::Solid(Color::rgb(0x83, 0xca, 0xff)),
+        Fill::Solid(Color::rgb(0x31, 0x40, 0x04)),
+        Fill::Solid(Color::rgb(0xae, 0xcf, 0x00))
+    ];
 
     let mut chart = BarChart::new(options);
     chart.set_stream(stream);
-
+    
     drawing_area.connect_draw(move |area, cr| {
         let (rect, _) = area.get_allocated_size();
         let size = (rect.width as f64, rect.height as f64);
@@ -111,6 +127,4 @@ pub fn setup_chart() -> gtk::DrawingArea {
 
         Inhibit(false)
     });
-    
-    drawing_area
 }

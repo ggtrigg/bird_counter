@@ -73,16 +73,17 @@ fn main() {
         let stack = Stack::new();
         window.add(&stack);
 
-        let vbox = Box::new(Orientation::Vertical, 5);
-        vbox.set_homogeneous(true);
+        let image_box = Box::new(Orientation::Vertical, 5);
+        image_box.set_homogeneous(true);
 
-        let cbox = Box::new(Orientation::Horizontal, 5);
-        cbox.set_homogeneous(true);
+        let chart_box = Box::new(Orientation::Horizontal, 5);
+        chart_box.set_homogeneous(true);
         
-        cbox.add(&chart::setup_chart());
+        let drawing_area = chart::setup_chart();
+        chart_box.add(&drawing_area);
 
-        stack.add_named(&vbox, "birds");
-        stack.add_named(&cbox, "charts");
+        stack.add_named(&image_box, "birds");
+        stack.add_named(&chart_box, "charts");
         stack.set_homogeneous(true);
         stack.set_transition_type(gtk::StackTransitionType::SlideLeft);
         
@@ -103,9 +104,13 @@ fn main() {
         });
         unsafe { stack.set_data("gesture", gesture); }
 
-        load_images(&vbox, &animals);
+        load_images(&image_box, &animals);
         
-        glib::timeout_add_seconds_local(300, move || { refresh_images(&vbox) });
+        glib::timeout_add_seconds_local(300, move || {
+            refresh_images(&image_box);
+            chart::update_chart(&drawing_area);
+            glib::Continue(true)
+        });
 
         window.show_all();
     });
