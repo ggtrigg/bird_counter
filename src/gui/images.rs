@@ -43,11 +43,11 @@ impl gui::Gui {
                 ebox.set_above_child(true);
                 let drawing_area = self.drawing_area.clone();
                 ebox.connect_event(move |widget, event| {
-                let event_type = event.get_event_type();
-                if event_type == gdk::EventType::ButtonPress || event_type == gdk::EventType::TouchBegin {
-                    let coords = event.get_coords().unwrap_or((0.0, 0.0));
-                    unsafe { widget.set_data("last_coords", (coords.0, coords.1, event.get_time())) };
-                } else if event_type == gdk::EventType::ButtonRelease || event_type == gdk::EventType::TouchEnd {
+                    let event_type = event.get_event_type();
+                    if event_type == gdk::EventType::ButtonPress || event_type == gdk::EventType::TouchBegin {
+                        let coords = event.get_coords().unwrap_or((0.0, 0.0));
+                        unsafe { widget.set_data("last_coords", (coords.0, coords.1, event.get_time())) };
+                    } else if event_type == gdk::EventType::ButtonRelease || event_type == gdk::EventType::TouchEnd {
                         if let Some(last_coords) = unsafe { widget.get_data::<(f64, f64, u32)>("last_coords") } {
                             let coords = event.get_coords().unwrap_or((0.0, 0.0));
                             if (last_coords.0 == coords.0) && (last_coords.1 == coords.1) && (event.get_time() - last_coords.2 < 500) {
@@ -55,8 +55,8 @@ impl gui::Gui {
                                 charts::update_chart(&drawing_area);
                             }
                         }
-                }
-                Inhibit(false)
+                    }
+                    Inhibit(false)
                 });
                 hbox.pack_start(&ebox, true, true, 0);
                 
