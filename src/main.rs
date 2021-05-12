@@ -5,17 +5,18 @@ extern crate glib;
 extern crate gtk;
 
 mod gui;
-mod chart;
 
 use gio::prelude::*;
 use gtk::prelude::*;
 pub use gui::*;
+pub use gui::images::*;
+pub use gui::charts::*;
 use std::env::args;
 use std::result::Result;
 use turbosql::{Blob, Turbosql, execute};
 
 use chrono::Local;
-use gtk::{Application, ApplicationWindow, Box, GesturePan, Stack, Orientation};
+use gtk::{Application, ApplicationWindow};
 
 #[derive(Turbosql, Default)]
 pub struct Animal {
@@ -70,45 +71,11 @@ fn main() {
         if *is_fullscreen {
             window.fullscreen();
         }
-        let stack = Stack::new();
-        window.add(&stack);
-
-        let image_box = Box::new(Orientation::Vertical, 5);
-        image_box.set_homogeneous(true);
-
-        let chart_box = Box::new(Orientation::Horizontal, 5);
-        chart_box.set_homogeneous(true);
-        
-        let drawing_area = chart::setup_chart();
-        chart_box.add(&drawing_area);
-
-        stack.add_named(&image_box, "birds");
-        stack.add_named(&chart_box, "charts");
-        stack.set_homogeneous(true);
-        stack.set_transition_type(gtk::StackTransitionType::SlideLeft);
-        
-        let gesture = GesturePan::new(&stack, gtk::Orientation::Horizontal);
-        gesture.set_propagation_phase(gtk::PropagationPhase::Capture);
-        gesture.connect_pan(move |gesture, direction, offset| {
-            if offset > 50.0 {
-                if let Some(widget) = gesture.get_widget() {
-                    if let Ok(nbook) = widget.downcast::<gtk::Stack>() {
-                        match direction {
-                            gtk::PanDirection::Left => nbook.set_visible_child_full("charts", gtk::StackTransitionType::SlideLeft),
-                            gtk::PanDirection::Right => nbook.set_visible_child_full("birds", gtk::StackTransitionType::SlideRight),
-                            _ => ()
-                        }
-                    }
-                }
-            }
-        });
-        unsafe { stack.set_data("gesture", gesture); }
-
-        load_images(&image_box, &animals);
+        let gui = gui::Gui::new();
+        window.add(&gui.build(animals));
         
         glib::timeout_add_seconds_local(300, move || {
-            refresh_images(&image_box);
-            chart::update_chart(&drawing_area);
+            gui.refresh();
             glib::Continue(true)
         });
 

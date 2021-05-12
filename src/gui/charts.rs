@@ -1,4 +1,5 @@
 use std::iter::{FromIterator, Iterator};
+// use crate::gui;
 use primitives::colorspace::prelude::*;
 use charts::{Chart, BarChart, BarChartOptions, Position, Fill};
 use animate::Canvas;
@@ -81,14 +82,6 @@ fn create_stream() -> DataStream<String, i32> {
     }
 
     DataStream::new(metadata, frames)
-}
-
-pub fn setup_chart() -> gtk::DrawingArea {
-    let drawing_area = Box::new(gtk::DrawingArea::new)();
-
-    update_chart(&drawing_area);
-    
-    drawing_area
 }
 
 pub fn update_chart(drawing_area: &gtk::DrawingArea) -> () {
