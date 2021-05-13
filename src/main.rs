@@ -71,15 +71,16 @@ fn main() {
         if *is_fullscreen {
             window.fullscreen();
         }
-        let gui = gui::Gui::new();
-        window.add(&gui.build(animals));
+        let gui = gui::Gui::new(window);
+        gui.window.add(&gui.build(animals));
+        let mainwin = gui.window.clone();
         
         glib::timeout_add_seconds_local(300, move || {
             gui.refresh();
             glib::Continue(true)
         });
 
-        window.show_all();
+        mainwin.show_all();
     });
 
     let args: Vec<String> = args().collect();
